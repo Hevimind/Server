@@ -28,14 +28,11 @@ def TableExists(table_name):
 
 def CreateTable(table_name):
     """Create a table in the database"""
-    ("start CreateTable")
     columns = ""
     match table_name:
         case 'users':
             columns = 'id TEXT PRIMARY KEY, name TEXT, numb TEXT, id_tg TEXT, surname TEXT'
         case 'trips':
-            # columns = 'user_id TEXT, typeofmembers TEXT, tripsdates TEXT, tripstimes TEXT, direction_name TEXT, route_number TEXT, pointa TEXT, pointb TEXT, id_trip TEXT, number_of_passengers TEXT, status TEXT'
-            # new version of table VVVVVVVV
             columns = 'user_id TEXT, typeofmembers TEXT, tripsdates TEXT, tripstimes TEXT, direction_name TEXT, route_number INTEGER, pointa INTEGER, pointb INTEGER, id_trip TEXT, number_of_passengers INTEGER, status TEXT'
         case 'transactions':
             columns = 'id TEXT PRIMARY KEY, user_id, summ TEXT, date_time TEXT, type_of_transaction TEXT'
@@ -44,11 +41,11 @@ def CreateTable(table_name):
         case 'balance':
             columns = 'id TEXT PRIMARY KEY, user_id TEXT, summ TEXT'
         case 'agreedTrips':
-            # columns = 'id_trip TEXT, tripsdates TEXT, tripstimes TEXT, pointa TEXT, pointb TEXT, number_of_passengers TEXT, id_driver TEXT, id_passenger TEXT, status TEXT, ids_trips TEXT, maximum_number_of_passengers TEXT'
-            # new version of table VVVVVVVV
             columns = 'agreeding_trips_id TEXT, driver_trip_id TEXT, maximum_number_of_passengers INTEGER, number_of_passengers INTEGER, ids_trips TEXT, status TEXT'
         case 'agreement':
             columns = 'id_agreement TEXT, id_user TEXT, response INT, datetime TEXT'
+        case 'is_become_driver':
+            columns = 'id_become TEXT, id_user TEXT, status INTEGER, datetime TEXT'
         case _:
             raise ValueError(f"Unknown table name '{table_name}'")
     cur.execute(f"CREATE TABLE {table_name}({columns})")
