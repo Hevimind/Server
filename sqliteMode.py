@@ -9,7 +9,8 @@ db_path = 'bd.db'
 
 # Check if database exists, create if it doesn't
 if not os.path.exists(db_path):
-    open(db_path, 'w').close()
+    with open(db_path, 'w') as f:
+        pass
 
 
 # Connecting to a database and creating a cursor
@@ -43,7 +44,7 @@ def CreateTable(table_name):
         case 'agreedTrips':
             columns = 'agreeding_trips_id TEXT, driver_trip_id TEXT, maximum_number_of_passengers INTEGER, number_of_passengers INTEGER, ids_trips TEXT, status TEXT'
         case 'agreement':
-            columns = 'id_agreement TEXT, id_user TEXT, response INT, datetime TEXT'
+            columns = 'id_agreement TEXT, user_tg_id TEXT, response INT, datetime TEXT'
         case 'is_become_driver':
             columns = 'id_become TEXT, id_user TEXT, status INTEGER, datetime TEXT'
         case _:
@@ -65,6 +66,7 @@ def InsertData(T, V, C=""):
     try:
         if not TableExists(T):
             CreateTable(T)
+            con.commit()
         cur.execute(f'INSERT INTO {T} {C} VALUES({V})')
         con.commit()
         return [1, 2]

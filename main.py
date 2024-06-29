@@ -80,14 +80,16 @@ def SpendTheBalance():
 
         user_balance -= deduction
 
-        UpdateData("balance", "summ", user_balance, "user_id", user_id)
+        CheckOne = UpdateData("balance", "summ", user_balance, "user_id", user_id)
+
         #create a transaction
         current_datetime = str(datetime.now())
         transaction_id = GenerateAlfNumStr(10)
         transaction_data = f'"{transaction_id}", "{user_id}", "{deduction}", "{current_datetime}", "purchase" '
-        InsertData("transactions", transaction_data)
-
-        return jsonify({"action": "success", "balance": user_balance})
+        CheckTwo = InsertData("transactions", transaction_data)
+        if CheckOne and CheckTwo:
+            return jsonify({"action": "success", "balance": user_balance})
+        return jsonify({"action": "errorData", "data": {"balance": None}})
     except Exception as e:
         return jsonify({"action": "errorData"})
     
@@ -96,21 +98,26 @@ def RechargeTheBalance():
     """route for recharging users balance"""
     try:
         credit = request.json['credit']
+
         user_id = request.json['user_id']
-        user_balance = SelectData("balance", "user_id", user_id, "summ" )["summ"]
+
+        user_balance = float(SelectData("balance", "user_id", user_id, "summ" )["summ"])
 
         user_balance += credit
 
-        UpdateData("balance", "summ", user_balance, "user_id", user_id)
+        CheckOne = UpdateData("balance", "summ", user_balance, "user_id", user_id)
 
         #create a transaction
         current_datetime = str(datetime.now())
         transaction_id = GenerateAlfNumStr(10)
         transaction_data = f'"{transaction_id}", "{user_id}", "{credit}", "{current_datetime}", "deposit" '
-        InsertData("transactions", transaction_data)
-        
-        return jsonify({"action": "success", "balance": user_balance})
+        CheckTwo = InsertData("transactions", transaction_data)
+
+        if CheckOne and CheckTwo:
+            return jsonify({"action": "success", "balance": user_balance})
+        return jsonify({"action": "errorData", "data": {"balance": None}})
     except Exception as e:
+        print(e)
         return jsonify({"action": "errorData"})
 
 # Working with consent
@@ -164,13 +171,13 @@ def getUserConsent():
         try:
             user_tg_id = request.json["user_tg_id"]
             # Example of retrieving data from your database (modify as per your database structure):
-            response_data = SelectData(T="agreement", C= "user_tg_id", V= user_tg_id)
+            response_data = SelectData(T="agreement", C="user_tg_id", V=user_tg_id)
             if response_data:
                 response = response_data["response"]
                 timestamp = response_data["datetime"]
                 id_agreement = response_data["id_agreement"]
 
-                return jsonify({"action": "success", "data": {"response": response, "datetime": timestamp, "id_agreement":id_agreement}})
+                return jsonify({"action": "success", "data": {"response": response, "datetime": timestamp, "id_agreement": id_agreement}})
             else:
                 return jsonify({"action": "errorData", "data": {"response": None, "datetime": None}})
         except Exception as e:
