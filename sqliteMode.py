@@ -42,7 +42,7 @@ def CreateTable(table_name):
         case 'balance':
             columns = 'id TEXT PRIMARY KEY, user_id TEXT, summ TEXT'
         case 'agreedTrips':
-            columns = 'agreeding_trips_id TEXT, driver_trip_id TEXT, maximum_number_of_passengers INTEGER, number_of_passengers INTEGER, ids_trips TEXT, status TEXT'
+            columns = 'agreeing_trips_id TEXT, driver_trip_id TEXT, maximum_number_of_passengers INTEGER, number_of_passengers INTEGER, ids_trips TEXT, status TEXT'
         case 'agreement':
             columns = 'id_agreement TEXT, user_tg_id TEXT, response INT, datetime TEXT'
         case 'is_become_driver':

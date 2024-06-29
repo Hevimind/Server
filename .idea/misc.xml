@@ -3,4 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="Python 3.10 virtualenv at ~/venv/flask_aiogram" />
   </component>
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.10 virtualenv at ~/venv/flask_aiogram" project-jdk-type="Python SDK" />
 </project>
