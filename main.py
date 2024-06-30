@@ -41,10 +41,16 @@ def registrations():
     """route for  register users"""
     try:
         idUser = GenerateAlfNumStr(10)
+        idBalance = GenerateAlfNumStr(10)
         INNSI = f'"{idUser}", "{request.json["name"]}", "{request.json["numb"]}", "{request.json["id_tg"]}", "{request.json["surname"]}"'
         check = InsertData(T="users", V=INNSI)
+
+        #set to balance 500 points
+        startBalanceData = f'"{idBalance}", "{idUser}", "{float(500)}" '
+        startBalance = InsertData(T="balance", V=startBalanceData)
+
         con.commit()
-        if len(check) > 1:
+        if len(check) > 1 and len(startBalance) > 1:
             return jsonify({"action": "success", "id": idUser})
         else:
             return jsonify({"action": "errorData"})
@@ -57,7 +63,7 @@ def getUsersBalance():
     """route for getting users balance"""
     try:
         user_id = request.json['user_id']
-        user_balance = SelectData("balance", "user_id", user_id, "summ" )["summ"]
+        user_balance = SelectData("balance", "user_id", user_id, "summ")["summ"]
 
         return jsonify({"action": "success", "balance": user_balance})
     except Exception as e:
@@ -71,18 +77,20 @@ def SpendTheBalance():
         user_id = request.json['user_id']
         deduction = request.json['deduction']
 
-        user_balance = SelectData("balance", "user_id", user_id, "summ" )["summ"]
+        user_balance = SelectData("balance", "user_id", user_id, "summ")["summ"]
 
         user_balance -= deduction
 
-        UpdateData("balance", "summ", user_balance, "user_id", user_id)
+        CheckOne = UpdateData("balance", "summ", user_balance, "user_id", user_id)
+
         #create a transaction
         current_datetime = str(datetime.now())
         transaction_id = GenerateAlfNumStr(10)
         transaction_data = f'"{transaction_id}", "{user_id}", "{deduction}", "{current_datetime}", "purchase" '
-        InsertData("transactions", transaction_data)
-
-        return jsonify({"action": "success", "balance": user_balance})
+        CheckTwo = InsertData("transactions", transaction_data)
+        if CheckOne and CheckTwo:
+            return jsonify({"action": "success", "balance": user_balance})
+        return jsonify({"action": "errorData", "data": {"balance": None}})
     except Exception as e:
         return jsonify({"action": "errorData"})
 
@@ -92,24 +100,29 @@ def RechargeTheBalance():
     """route for recharging users balance"""
     try:
         credit = request.json['credit']
+
         user_id = request.json['user_id']
-        user_balance = SelectData("balance", "user_id", user_id, "summ" )["summ"]
+
+        user_balance = float(SelectData("balance", "user_id", user_id, "summ")["summ"])
 
         user_balance += credit
 
-        UpdateData("balance", "summ", user_balance, "user_id", user_id)
+        CheckOne = UpdateData("balance", "summ", user_balance, "user_id", user_id)
 
         #create a transaction
         current_datetime = str(datetime.now())
         transaction_id = GenerateAlfNumStr(10)
         transaction_data = f'"{transaction_id}", "{user_id}", "{credit}", "{current_datetime}", "deposit" '
-        InsertData("transactions", transaction_data)
+        CheckTwo = InsertData("transactions", transaction_data)
 
-        return jsonify({"action": "success", "balance": user_balance})
+        if CheckOne and CheckTwo:
+            return jsonify({"action": "success", "balance": user_balance})
+        return jsonify({"action": "errorData", "data": {"balance": None}})
     except Exception as e:
+        print(e)
         return jsonify({"action": "errorData"})
 
-        
+
 # Working with consent
 @app.route('/consent/save_response', methods=['POST'])
 def saveUserConsent():
@@ -143,11 +156,9 @@ def saveUserConsent():
         return jsonify({"action": "errorData"})
 
 
-
-
 @app.route('/consent/get_response', methods=['POST'])
 def getUserConsent():
-        """
+    """
         Route for retrieving user's consent response.
 
         Expects JSON data with the following fields:
@@ -158,20 +169,21 @@ def getUserConsent():
           if data is successfully retrieved.
         - {"action": "errorData"} if there is an error during the process.
         """
-        try:
-            user_tg_id = request.json["user_tg_id"]
-            # Example of retrieving data from your database (modify as per your database structure):
-            response_data = SelectData(T="agreement", C= "user_tg_id", V= user_tg_id)
-            if response_data:
-                response = response_data["response"]
-                timestamp = response_data["datetime"]
-                id_agreement = response_data["id_agreement"]
+    try:
+        user_tg_id = request.json["user_tg_id"]
+        # Example of retrieving data from your database (modify as per your database structure):
+        response_data = SelectData(T="agreement", C="user_tg_id", V=user_tg_id)
+        if response_data:
+            response = response_data["response"]
+            timestamp = response_data["datetime"]
+            id_agreement = response_data["id_agreement"]
 
-                return jsonify({"action": "success", "data": {"response": response, "datetime": timestamp, "id_agreement":id_agreement}})
-            else:
-                return jsonify({"action": "errorData", "data": {"response": None, "datetime": None}})
-        except Exception as e:
-            return jsonify({"action": "errorData"})
+            return jsonify({"action": "success",
+                            "data": {"response": response, "datetime": timestamp, "id_agreement": id_agreement}})
+        else:
+            return jsonify({"action": "errorData", "data": {"response": None, "datetime": None}})
+    except Exception as e:
+        return jsonify({"action": "errorData"})
 
 
 @app.route('/check_drivers/save_drivers', methods=['POST'])
@@ -205,11 +217,9 @@ def saveDriversCheck():
         return jsonify({"action": "errorData"})
 
 
-
-
 @app.route('/check_drivers/get_drivers', methods=['POST'])
 def getDriversCheck():
-        """
+    """
         Route for retrieving user's consent response.
 
         Expects JSON data with the following fields:
@@ -220,21 +230,22 @@ def getDriversCheck():
           if data is successfully retrieved.
         - {"action": "errorData"} if there is an error during the process.
         """
-        try:
-            id_user = request.json["id_user"]
+    try:
+        id_user = request.json["id_user"]
 
-            # Example of retrieving data from your database (modify as per your database structure):
-            status_data = SelectData(T="is_become_driver", C= "id_user", V= id_user)
-            if status_data:
-                status = status_data["status"]
-                timedate = status_data["datetime"]
-                id_become = status_data["id_become"]
+        # Example of retrieving data from your database (modify as per your database structure):
+        status_data = SelectData(T="is_become_driver", C="id_user", V=id_user)
+        if status_data:
+            status = status_data["status"]
+            timedate = status_data["datetime"]
+            id_become = status_data["id_become"]
 
-                return jsonify({"action": "success", "data": {"status": status, "datetime": timedate, "id_become":id_become}})
-            else:
-                return jsonify({"action": "errorData", "data": {"status": None, "datetime": None}})
-        except Exception as e:
-            return jsonify({"action": "errorData"})
+            return jsonify(
+                {"action": "success", "data": {"status": status, "datetime": timedate, "id_become": id_become}})
+        else:
+            return jsonify({"action": "errorData", "data": {"status": None, "datetime": None}})
+    except Exception as e:
+        return jsonify({"action": "errorData"})
 
 
 # Working with trips ---------------------------------------------------------
@@ -245,21 +256,38 @@ def сreatingTrips():
     If the user is a driver, then there is a recording in the agreed trips
     """
     try:
-        id_trips = GenerateAlfNumStr(7)
-        id_trip = GenerateAlfNumStr(7)
-        ITTTPPI = f'"{request.json["user_id"]}", "{request.json["typeofmembers"]}", "{request.json["tripsdates"]}", "{request.json["tripstimes"]}", "{request.json["direction_name"]}", "{request.json["route_number"]}", "{request.json["pointa"]}","{request.json["pointb"]}", "{id_trips}", "{request.json["number_of_passengers"]}", "{request.json["status"]}"'
+        # Create record in bd in table trips
+        idTrip = GenerateAlfNumStr(7)
+        ITTTPPI = f'''"{request.json["user_id"]}",
+         "{request.json["typeofmembers"]}",
+          "{request.json["tripsdates"]}",
+           "{request.json["tripstimes"]}",
+         "{request.json["direction_name"]}"
+         , "{request.json["route_number"]}",
+          "{request.json["pointa"]}",
+          "{request.json["pointb"]}",
+           "{idTrip}",
+          "{request.json["number_of_passengers"]}",
+           "{request.json["status"]}"'''
         check = InsertData("trips", ITTTPPI)
         con.commit()
-        if request.json["typeofmembers"] == "driver":
-            request_bd = f'"{id_trip}", "{request.json["user_id"]}", {request.json["maximum_number_of_passengers"]}, {request.json["number_of_passengers"]}, "{id_trips}", "{request.json["status"]}"'
-            check_2 = InsertData("agreedTrips", request_bd,
-                               "(agreeding_trips_id, driver_trip_id, maximum_number_of_passengers, number_of_passengers, ids_trips, status)")
-            con.commit()
-            return jsonify({"action": "success", "id_trip": id_trips, "id_agreedTrips": id_trip})
-        if len(check) > 0:
-            return jsonify({"action": "success", "id_trip": id_trips})
-        else:
-            return jsonify({"action": "errorData"})
+        if len(check) == 0:
+            return jsonify({"action": "errorData", "id_trip": None})
+        if request.json["typeofmembers"] == "passenger":
+            return jsonify({"action": "success", "id_trip": idTrip})
+
+        # Create record in bd in table agreedTrips if is driver
+        agreeingTripsId = GenerateAlfNumStr(7)
+        bodyRequest = f'''"{agreeingTripsId}", "{idTrip}",
+         "{request.json["maximum_number_of_passengers"]}",
+         "{request.json["number_of_passengers"]}",
+          "",
+          "{request.json["status"]}"'''
+        check2 = InsertData("agreedTrips", bodyRequest)
+        con.commit()
+        if len(check2) == 0:
+            return jsonify({"action": "errorData", "id_trip": None, "id_agreedTrips": None})
+        return jsonify({"action": "errorData", "id_trip": idTrip, "id_agreedTrips": agreeingTripsId})
     except Exception as e:
         return jsonify({"action": "errorData"})
 
@@ -344,7 +372,6 @@ def setAgreedTrips():
                 return jsonify({"action": "success", "status": "success"})
             return jsonify({"action": "errorData1"})
     except Exception as e:
-        ##print(traceback.format_exc())
         return jsonify({"action": "errorData"})
 
 
@@ -410,22 +437,21 @@ def updateTripStatus():
 # ----------------- admin -----------------
 @app.route('/admin/get_by_number', methods=['POST'])
 def AdminGetByNumber():
-        """
+    """
         Admin route for retrieving all users by number.
         """
 
-        request_number = request.json["numb"]
+    request_number = request.json["numb"]
 
-        try:
-            # Example of retrieving data from your database (modify as per your database structure):
-            user_data = SelectAllData("users", "numb", request_number)
-            if user_data:
-                return jsonify({"action": "success", "data": user_data})
-            else:
-                return jsonify({"action": "errorData", "data": "error"})
-        except Exception as e:
-            return jsonify({"action": "errorData"})
-
+    try:
+        # Example of retrieving data from your database (modify as per your database structure):
+        user_data = SelectAllData("users", "numb", request_number)
+        if user_data:
+            return jsonify({"action": "success", "data": user_data})
+        else:
+            return jsonify({"action": "errorData", "data": "error"})
+    except Exception as e:
+        return jsonify({"action": "errorData"})
 
 @app.route('/admin/get_trips_by_date', methods=['POST'])
 def AdminGetByTripDate():
