@@ -427,6 +427,24 @@ def AdminGetByNumber():
             return jsonify({"action": "errorData"})
 
 
+@app.route('/admin/get_trips_by_date', methods=['POST'])
+def AdminGetByTripDate():
+        """
+        Admin route for retrieving all trips by date.
+        """
+
+        request_date = request.json["tripsdates"]
+
+        try:
+            # Example of retrieving data from your database (modify as per your database structure):
+            trips_data = SelectAllData("trips", "tripsdates", request_date)
+            if trips_data:
+                return jsonify({"action": "success", "data": trips_data})
+            else:
+                return jsonify({"action": "errorData", "data": "error"})
+        except Exception as e:
+            return jsonify({"action": "errorData"})
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001)
